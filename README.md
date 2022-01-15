@@ -8,16 +8,18 @@
 
 
 -storage
+
     -mapping (address => donation amount) 
 
     -donation limit
 
 
 -functions
+
     -donate to reciever
 
     -change reciever
-    
+
     -change donation limit
 
 
