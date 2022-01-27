@@ -2,8 +2,6 @@
 
 -single page react app
 
--donation reciever via ethereum network
-
 -link to contract code
 
 
@@ -16,10 +14,18 @@
 
 -functions
 
-    -donate to reciever
+    -donate x eth
 
-    -change reciever
+    -owner only: change receiver
 
-    -change donation limit
+    -owner only: change donation limit
+
+-front end
+
+    -display contract address, connected wallet, donation receiver's address, donation limit
+
+    -connect wallet button, donate button
+
+    -owner only form to change donation limit & donation receiver
 
 
