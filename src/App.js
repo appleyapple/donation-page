@@ -14,12 +14,12 @@ function App() {
   // ui
   const [walletAddress, setWalletAddress] = useState('');
   const [connectButton, setConnectButton] = useState('Connect wallet');
-  const [donationLimit, setDonationLimit] = useState('');
-  const [donationReceiver, setDonationReceiver] = useState('');
+  const [donationLimit, setDonationLimit] = useState(null);
+  const [donationReceiver, setDonationReceiver] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
   // form
-  const [donationAmount, setDonationAmount] = useState('');
+  const [donationAmount, setDonationAmount] = useState(0);
 
   // connect to browser extension 'MetaMask' and ethers
   async function connectWallet() {
@@ -44,10 +44,13 @@ function App() {
     }
   }
 
-  // doesn't work
+  // make donation (input in WEI)
   async function donate() {
     if (typeof window.ethereum !== 'undefined') {
-      contractWrite.donate();
+      const options = {value: ethers.utils.parseEther(ethers.utils.formatEther(donationAmount))}
+      const reciept = await contractWrite.donate(options);
+      await reciept.wait();
+      console.log('Donation success');
     }
   }
 
@@ -93,16 +96,16 @@ function App() {
         <h4>Donation Limit: {donationLimit} ETH</h4>
 
         <button onClick={connectWallet}>{connectButton}</button>
-        <button onClick={donate}>Donate</button>
         <input
           onChange={e => setDonationAmount(e.target.value)}
           placeholder='Donation limit'
           value={donationAmount}></input>
+        <button onClick={donate}>Donate</button>
+        <br/><br/>
+        <input onChange={e => setDonationLimit(e.target.value)} placeholder='Donation limit'/>
         <button onClick={setLimit}>[Owner only] Set donation limit</button>
-        <input
-          onChange={e => setDonationAmount(e.target.value)}
-          placeholder='Receiver address'
-          value={donationAmount}></input>
+
+        <input onChange={e => setDonationReceiver(e.target.value)} placeholder='Receiver address'/>
         <button onClick={setReceiver}>[Owner only] Designate donation receiver</button>
 
         <h2>{errorMessage}</h2>
