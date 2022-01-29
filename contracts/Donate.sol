@@ -17,9 +17,9 @@ contract Donate is Ownable {
     event NewDonation(address from, uint value);
 
     uint public donationLimit; // Donation limit in wei
-    address payable donationReceiver; // Address to receive donations
     mapping (address => uint) public patronDonations; // Tracks how much each user has donated
     address[] public patrons; // Stores address of patrons
+    address payable donationReceiver; // Address to receive donations
 
     constructor() {
         donationLimit = 1000000000000000000; // 1 eth

@@ -12,9 +12,11 @@ function App() {
   const [contractWrite, setContractWrite] = useState(null);
 
   // ui
+  const [ownerAddress, setOwnerAddress] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [connectButton, setConnectButton] = useState('Connect wallet');
-  const [donationLimit, setDonationLimit] = useState(null);
+  const [donationLimitUI, setDonationLimitUI] = useState(0);
+  const [donationLimit, setDonationLimit] = useState(0);
   const [donationReceiver, setDonationReceiver] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -27,39 +29,67 @@ function App() {
     if (typeof window.ethereum == 'undefined') {
       setErrorMessage('Error: install metamask!')
     } else {
-      // connect wallet 
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
-      .then(result => {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner(); 
-        setContractRead(new ethers.Contract(contractAddress, Donate.abi, provider));
-        setContractWrite(new ethers.Contract(contractAddress, Donate.abi, signer));
-        return result[0];
-      })
-      // display connection
-      .then(result => {
-        setConnectButton('Wallet connected');
-        setWalletAddress(result);
-      });
+      try {
+        // connect wallet 
+        await window.ethereum.request({ method: 'eth_requestAccounts' })
+        .then(result => {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner(); 
+          setContractRead(new ethers.Contract(contractAddress, Donate.abi, provider));
+          setContractWrite(new ethers.Contract(contractAddress, Donate.abi, signer));
+          return result[0];
+        })
+        // display connection
+        .then(result => {
+          setConnectButton('Wallet connected');
+          setWalletAddress(result);
+        });
+      } catch(err) {
+        setErrorMessage('Error: ' + toString(err));
+        console.log(err);
+      }
     }
   }
 
   // make donation (input in WEI)
   async function donate() {
     if (typeof window.ethereum !== 'undefined') {
-      const options = {value: ethers.utils.parseEther(ethers.utils.formatEther(donationAmount))}
-      const reciept = await contractWrite.donate(options);
-      await reciept.wait();
-      console.log('Donation success');
+      try {
+        const options = {value: ethers.utils.parseEther(ethers.utils.formatEther(donationAmount))}
+        const reciept = await contractWrite.donate(options);
+        await reciept.wait();
+        console.log('Donation success');
+      } catch(err) {
+        setErrorMessage('Error: ' + toString(err));
+        console.log(err);
+      }
     }
   }
 
   async function setLimit() {
-    
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const transaction = await contractWrite.setDonationLimit(donationLimit);
+        await transaction.wait();
+        setDonationLimitUI(ethers.utils.formatEther(donationLimit));
+      } catch(err) {
+        setErrorMessage('Error: ' + toString(err));
+        console.log(err);
+      }
+    }
   }
 
   async function setReceiver() {
-    
+    if (typeof window.ethereum !== 'undefined') {
+
+      try {
+        const transaction = await contractWrite.setDonationReceiver(donationReceiver);
+        await transaction.wait();
+      } catch(err) {
+        setErrorMessage('Error: ' + toString(err));
+        console.log(err);
+      }
+    }
   }
 
   // get storage data: donation limit, patrons-donations, receiver
@@ -69,15 +99,21 @@ function App() {
       const contract = new ethers.Contract(contractAddress, Donate.abi, provider);
       try {
         let limit = await contract.donationLimit();
-        setDonationLimit(ethers.utils.formatEther(limit)) // bignumber -> eth
+        setDonationLimit(ethers.utils.formatEther(limit)); // bignumber -> eth
+        setDonationLimitUI(ethers.utils.formatEther(limit));
 
         let receiver = await contract.getReceiverAddress();
         setDonationReceiver(ethers.utils.getAddress(receiver));
 
         // need to test (convert array elements to readable addresses)
         let patrons = await contract.getPatronsArray();
-        console.log(patrons);
-      } catch (err) {
+        // console.log(patrons);
+
+        let owner = await contract.owner();
+        setOwnerAddress(owner);
+        // console.log(owner);
+      } catch(err) {
+        setErrorMessage('Error: ' + toString(err));
         console.log('error: ', err);
       }
     }
@@ -91,9 +127,10 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h2>Contract Address: {contractAddress}</h2>
+        <h2>Contract Owner: {ownerAddress}</h2>
         <h2>Connected Wallet: {walletAddress}</h2>
         <h4>Donate to: {donationReceiver}</h4>
-        <h4>Donation Limit: {donationLimit} ETH</h4>
+        <h4>Donation Limit: {donationLimitUI} ETH</h4>
 
         <button onClick={connectWallet}>{connectButton}</button>
         <input
